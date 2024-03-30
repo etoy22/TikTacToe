@@ -1,123 +1,234 @@
+import copy
+
 class node():
-    def __init__(self, cBoard, m):
-        self.cBoard = cBoard
+    '''
+    Initalizes node
+    
+    Input:
+    cBoard (list) - current board state
+    m (int) - how many you need to get in a row to win
+    player (string) - If that player would place down a "X" or an "O
+    depth (int) - Depth of the node (Defaults to 0)
+    
+    Setup:
+    n (int) - width/height of the board
+    value (int) - the heuristic value of the board 
+    child (list[Node]) - a list of all possible moves that can be done
+    new (bool) - Determines if we need to attempt to populate the child list
+    '''
+    def __init__(self, cBoard, m,player,depth = 0):
+        self.cBoard = cBoard 
+        self.m = m
+        self.player = player
+        self.depth = depth
         self.n = len(self.cBoard)
-        self.m = m     
+        self.value = None
+        self.child = []
+        self.new = True
+    
+    '''
+    Populates the child nodes of the board should only run once per node
+    Input:
+        parent(Node) - the current node that you want the children of
+    
+    Returns:
+        possibleMoves (Node) - List of all possible moves that can be made
+    '''
+    def populate(self):
+        possibleMoves = []
+        for i in range (self.n):
+            for j in range (self.n):
+                if self.cBoard[i][j] == '_':
+                    childBoard = copy.deepcopy(self.cBoard)
+                    childBoard[i][j] = self.player
+                    if(self.player == 'X'):
+                        child = node(childBoard,3,'O',self.depth +1)
+                    else:
+                        child = node(childBoard,3,'X',self.depth+1)
+                    possibleMoves.append(child)
+        self.child = possibleMoves
+        
 
-#assuming that node has cBoard, n, m
-def is_winner(node, mark):
+#assuming that cNode has cBoard, n, m
+'''
+Checks to see if there is a winner
+Input:
+    cNode (node) - the current node
+    mark (string) - either X or O
 
-  def check_line(line):
-    count = 0
-    for cell in line:
-      if cell == mark:
-        count += 1
-        if count == node.m:
-          return True
-      else: count = 0
-    return False
-  
-  def check_row():
-    for row in node.cBoard:
-      if check_line(row):
+Returns:
+    bool - Either True if there is a winner or False if there isn't one
+'''
+def is_winner(cNode, mark):
+    
+    '''
+    Helper function to check if there is a win of size m (borrowing from node)
+    
+    Input:
+        line (list) - the line to check if there is a win
+    
+    Returns:
+        bool - Either True (Yes) False (No)
+    '''
+    def check_line(line):
+        count = 0
+        for cell in line:
+            if cell == mark:
+                count += 1
+                if count == cNode.m:
+                    return True
+            else: count = 0
+        return False
+    
+    '''
+    Check in a row if there is a win
+    
+    Returns:
+        bool - Either True (Yes) False (No)
+    '''
+    def check_row():
+        for row in cNode.cBoard:
+            if check_line(row):
+                return True
+        return False
+    
+    '''
+    Check in a column if there is a win
+    
+    Returns:
+        bool - Either True (Yes) False (No)
+    '''
+    def check_col():
+        transposed_matrix = [list(column) for column in zip(*cNode.cBoard)]
+        for row in transposed_matrix:
+            if check_line(row): 
+                return True
+        return False
+    
+    '''
+    Check in a diagonal if there is a win
+    
+    Returns:
+        bool - Either True (Yes) False (No)
+    '''
+    def check_diag():
+        diag = []
+        for i in range(cNode.n):
+            for j in range(cNode.n):
+                if i == j:
+                    diag.append(cNode.cBoard[i][j])
+        return check_line(diag)
+        
+    '''
+    Check in other diagonals if there is a win
+    
+    Returns:
+        bool - Either True (Yes) False (No)
+    '''
+    def check_antiDiag():
+        diag = []
+        for i, j in zip(range(cNode.n), reversed(range(cNode.n))):
+            diag.append(cNode.cBoard[i][j])
+        return check_line(diag)
+
+    is_row_winner = check_row()
+    is_col_winner = check_col()
+    is_diag_winner = check_diag()
+    is_antiDiag_winner = check_antiDiag()
+
+    if is_row_winner or is_col_winner or is_diag_winner or is_antiDiag_winner:
+        return True
+    else:
+        return False
+
+
+
+# TODO: Double check if is_draw is needed
+'''
+Checks if there would be a draw
+
+Input:
+    cNode (node) - current node
+
+Returns:
+    bool - True (Yes) or False (No)
+'''
+def is_draw(cNode):
+    if not (is_winner(cNode, 'X') or is_winner(cNode, 'O')):
+        for row in cNode.cBoard:
+            for cell in row:
+                if cell == '_':
+                    return False
         return True
     return False
-  
-  def check_col():
-    transposed_matrix = [list(column) for column in zip(*node.cBoard)]
-    for row in transposed_matrix:
-      if check_line(row): 
-        return True
-    return False
-  
-  def check_diag():
-    diag = []
-    for i in range(node.n):
-      for j in range(node.n):
-        if i == j:
-          diag.append(node.cBoard[i][j])
-    return check_line(diag)
+
+def cutoffs(cNode, opponent_mark):
+    def count_in_line(line):
+        cutoff_cnt = 0
+        count = 0
+        for cell in line:
+            if cell == opponent_mark:
+                count += 1
+                if count == cNode.m - 1:
+                    cutoff_cnt += 1
+            else: count = 0
+        return cutoff_cnt
     
-  def check_antiDiag():
-    diag = []
-    for i, j in zip(range(node.n), reversed(range(node.n))):
-      diag.append(node.cBoard[i][j])
-    return check_line(diag)
-
-  is_row_winner = check_row()
-  is_col_winner = check_col()
-  is_diag_winner = check_diag()
-  is_antiDiag_winner = check_antiDiag()
-
-  if is_row_winner or is_col_winner or is_diag_winner or is_antiDiag_winner:
-    return True
-  else:
-    return False
-
-def is_draw(node):
-  if not (is_winner(node, 'X') or is_winner(node, 'O')):
-    for row in node.cBoard:
-      for cell in row:
-        if cell == '_':
-          return False
-    return True
-  return False
-
-def cutoffs(node, opponent_mark):
-
-  def count_in_line(line):
-    cutoff_cnt = 0
-    count = 0
-    for cell in line:
-      if cell == opponent_mark:
-        count += 1
-        if count == node.m - 1:
-          cutoff_cnt += 1
-      else: count = 0
-    return cutoff_cnt
-  
-  def count_row():
-    cnt = 0
-    for row in node.cBoard:
-      cnt += count_in_line(row)
-    return cnt
-  
-  def count_col():
-    cnt = 0
-    transposed_matrix = [list(column) for column in zip(*node.cBoard)]
-    for row in transposed_matrix:
-      cnt += count_in_line(row)
-    return cnt
-  
-  def check_diag():
-    diag = []
-    for i in range(node.n):
-      for j in range(node.n):
-        if i == j:
-          diag.append(node.cBoard[i][j])
-    return count_in_line(diag)
+    def count_row():
+        cnt = 0
+        for row in cNode.cBoard:
+            cnt += count_in_line(row)
+        return cnt
     
-  def check_antiDiag():
-    diag = []
-    for i, j in zip(range(node.n), reversed(range(node.n))):
-      diag.append(node.cBoard[i][j])
-    return count_in_line(diag)
+    def count_col():
+        cnt = 0
+        transposed_matrix = [list(column) for column in zip(*cNode.cBoard)]
+        for row in transposed_matrix:
+            cnt += count_in_line(row)
+        return cnt
+    
+    def check_diag():
+        diag = []
+        for i in range(cNode.n):
+            for j in range(cNode.n):
+                if i == j:
+                    diag.append(cNode.cBoard[i][j])
+        return count_in_line(diag)
+        
+    def check_antiDiag():
+        diag = []
+        for i, j in zip(range(cNode.n), reversed(range(cNode.n))):
+            diag.append(cNode.cBoard[i][j])
+        return count_in_line(diag)
 
-  return (check_antiDiag() +  check_diag() + count_col() + count_row())
+    return (check_antiDiag() +    check_diag() + count_col() + count_row())
 
-def heuristic(node, depth, agent_mark, opponent_mark):
-  h = 0
-  cutoffs_cnt = cutoffs(node, opponent_mark)
-  if is_winner(node, agent_mark):
-    h += (10*node.n - depth - cutoffs_cnt)
-  elif is_winner(node, opponent_mark):
-    h -= (10*node.n - depth - cutoffs_cnt)
-  return h
 
-board = [['X', 'X', 'O'],
-         ['O', 'X', 'O'],
-         ['_', 'X', '_']]
+'''
+Calculates the heurisitic value of a node
 
-node1 = node(board, 3)
+Input:
+    cNode (node) - current node that we are calculating
+    agent_mark (string) - if node is drawing a O or a X
+'''
+def heuristic(cNode, agent_mark):
+    if agent_mark == "O": # Determines that if agent is drawing one the opponent should draw the other
+        opponent_mark = "X"
+    else:
+        opponent_mark = "O"
+    
+    h = 0
+    cutoffs_cnt = cutoffs(cNode, opponent_mark)
+    if is_winner(cNode, agent_mark):
+        h += (10*cNode.n - cNode.depth - cutoffs_cnt)
+    elif is_winner(cNode, opponent_mark):
+        h -= (10*cNode.n - cNode.depth - cutoffs_cnt)
+    return h
 
-print(heuristic(node1, 2, 'O', 'X'))
+# board = [['X', 'X', 'O'],
+#         ['O', 'X', 'O'],
+#         ['_', 'X', '_']]
+
+# node1 = node(board, 3)
+
+# print(heuristic(node1, 2, 'O'))
