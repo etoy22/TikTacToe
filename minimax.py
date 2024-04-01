@@ -22,7 +22,7 @@ def minimax(cNode, alpha, beta, maxBool, player,depth=-1):
             player (string) - says if the player is X or O
         Returns:
             value (int) - This is the max or min value depending on what was being optimized
-            chosen_node (node) - This returns the node that was chosen in the path used too say the next move
+            chosen_node (node) - This returns the node that was chosen in the path used to say the next move
     '''
     if depth != -1: # Introduced node depth because we may want to have that exist especially as we get to the huge boards
         if cNode.depth >= depth:

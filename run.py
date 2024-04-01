@@ -66,7 +66,6 @@ def startGame():
             payload = f'type=game&teamId1={TEAM}&teamId2={opponent}&gameType=TTT&boardSize={n}&target={m}'
         else:
             payload = f'type=game&teamId1={opponent}&teamId2={TEAM}&gameType=TTT&boardSize={n}&target={m}'
-        payload = 'type=game&teamId1=1424&teamId2=&gameType=TTT&boardSize=20&target=10'
         conn.request("POST", "/aip2pgaming/api/index.php", payload, headers)
         res = conn.getresponse()
         data = res.read()

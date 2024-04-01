@@ -51,8 +51,6 @@ class node():
                     possibleMoves.append(child)
         self.child = possibleMoves
         
-#assuming that cNode has cBoard, n, m
-
 
 def is_winner(cNode, mark):
     '''
@@ -211,11 +209,3 @@ def heuristic(cNode, agent_mark):
     elif is_winner(cNode, opponent_mark):
         h -= (10*cNode.n - cNode.depth - cutoffs_cnt)
     return h
-
-# board = [['X', 'X', 'O'],
-#         ['O', 'X', 'O'],
-#         ['_', 'X', '_']]
-
-# node1 = node(board, 3)
-
-# print(heuristic(node1, 2, 'O'))
