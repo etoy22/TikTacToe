@@ -1,22 +1,21 @@
-import requests
+import http.client
 from minimax import minimax,secondLastMove
 from heursitic import node
+import json
 
 '''
     CONSTS
-    URL - the url to connect to
-    HEADERS - the header that is needed to connect to the games contains the api
+    url - the url to connect to
+    headers - the header that is needed to connect to the games contains the api
     TEAM - Our team id
 '''
-URL = "https://www.notexponential.com/aip2pgaming/api/index.php"
-HEADERS = {
-  'x-api-key': ' f1d4e5463f445fa81aae ',
-  'userid': '3626',
-  'Content-Type': 'application/x-www-form-urlencoded',
-  'Cookie': 'qa_key=02ujxhw4l9kefv9gxzdbd0m889fv2rxk'
-}
+conn = http.client.HTTPSConnection("www.notexponential.com")
 TEAM = 1424
-
+headers = {
+  'x-api-key': 'f1d4e5463f445fa81aae',
+  'userid': '3626',
+  'Content-Type': 'application/x-www-form-urlencoded'
+}
 
 '''
     Global Varriable
@@ -29,73 +28,140 @@ TEAM = 1424
 '''
 opponent = -1
 n = 12
-m = 6
 gameId = -1
-first = True
+create = False
+
+
+
+
 
 def startGame():
     '''
         Function to start the TicTacToe game
     '''
+    global n
+    global m
+    global gameId
+    global headers
+    first = False
     
+    if (create):
     # Clarifying questions about the game
-    print("Whats the opponent id?")
-    opponent = validNumber()
-    
-    print("Are you going first or second?")
-    first = YesNo()
-    
-    print("Defaults are Board Size of 12 and 6 would you like the defaults")
-    default = YesNo()
-    if (not(default)):
-        print("Whats the board size")
-        n = validNumber()
-        print("Whats the amount in a row to win")
-        m = validNumber()
+        print("Whats the opponent id?")
+        opponent = validNumber()
+        
+        print("Are you going first or second?")
+        first = YesNo()
+        
+        print("Defaults are Board Size of 12 and 6 would you like the defaults")
+        default = YesNo()
+        if (not(default)):
+            print("Whats the board size")
+            n = validNumber()
+            print("Whats the amount in a row to win")
+            m = validNumber()
 
     # Creation of the game
-    if (first):
-        payload = f'type=game&teamId1={TEAM}&teamId2={opponent}&gameType=TTT&boardSize={n}&target={m}'
+        if (first):
+            payload = f'type=game&teamId1={TEAM}&teamId2={opponent}&gameType=TTT&boardSize={n}&target={m}'
+        else:
+            payload = f'type=game&teamId1={opponent}&teamId2={TEAM}&gameType=TTT&boardSize={n}&target={m}'
+        payload = 'type=game&teamId1=1424&teamId2=&gameType=TTT&boardSize=20&target=10'
+        conn.request("POST", "/aip2pgaming/api/index.php", payload, headers)
+        res = conn.getresponse()
+        data = res.read()
+        board = []
+        for i in range(n):
+            board.append(["-"] * n)
     else:
-        payload = f'type=game&teamId1={opponent}&teamId2={TEAM}&gameType=TTT&boardSize={n}&target={m}'
+        print("Input the Game ID")
+        gameId = validNumber()
+
+        payload = ''
+        conn.request("GET", f"/aip2pgaming/api/index.php?type=boardString&gameId={gameId}", payload, headers)
+
+        res = conn.getresponse()
+        data = res.read()
+        input_string = data.decode('utf-8')
+        translate = json.loads(input_string)
+
+        # Extract the grid pattern
+        grid_pattern = translate["output"]
+
+        m = translate["target"]
+        board = [] # Possible new
+        for row in grid_pattern.split("\n"):
+            board.append(list(row))
+        board.pop()
     
-    response = requests.request("POST", URL, headers=HEADERS, data=payload) 
-    if response.code == "OK": #Double checks that it went through correctly
-        gameId = response.gameId
     
-    board = []
-    for i in range(n):
-        board.append(["-"] * n)
     
     if (first):
         goingFirst(board)
     else:
         goingSecond(board)
            
-    
+def depthPenality():
+    '''
+    Determines if the depth penaty comes into play which is any game where n is larger than 4
+    '''
+    global n
+    global m
+    depth = m * 2
+    if (n > 4):
+        return depth
+    return -1
+
+
 def goingFirst(board):
     '''
         Calculates the first move of the game
+
+        Input:
+            board (list) - current board state
     '''
+    global headers
+    global m
+    depth = depthPenality()
     current = node(board,m,'X')
-    _, current = (minimax(current,float('-inf'),float('inf'),False,'X'))
-    board =  current.cBoard
-    makeMove = f'type=move&gameId={gameId}&teamId={TEAM}&move={current.move[0]}%2C{current.move[1]}'
-    response = requests.request("POST", URL, headers=HEADERS, data=makeMove)
-    if response.code != "OK":
-        raise ValueError("ERROR on first submit move")
-    unified(board,'X','O')
+    _, current = (minimax(current,float('-inf'),float('inf'),True,'X',depth))
+    payload = f'type=move&gameId={gameId}&teamId={TEAM}&move={current.move[0]}%2C{current.move[1]}'
+    conn.request("POST", "/aip2pgaming/api/index.php", payload, headers)
+    res = conn.getresponse()
+    unified(board,'O','X',current)
     
 def goingSecond(board):
     '''
         Going second attempts to calculate what the opponent might do and starts calculating in advance
+
+        Input:
+            board (list) - current board state
     '''
-    current = node(board,m,'X')
-    minimax(current,float('-inf'),float('inf'),False,'O')
-    unified(board,'O', 'X')
+    global headers
+    global m
+    depth = depthPenality()
+    count = 0
+    for row in board:
+        count += row.count('-')
+    
+    if len(board)*len(board) == count: 
+        current = node(board,m,'O')
+        minimax(current,float('-inf'),float('inf'),False,'X')
+    else:
+        if gameId != 4783:
+            current = node(board,m,'X')
+            _, current = (minimax(current,float('-inf'),float('inf'),True,'X',depth))
+            payload = f'type=move&gameId={gameId}&teamId={TEAM}&move={current.move[0]}%2C{current.move[1]}'
+            conn.request("GET", f"/aip2pgaming/api/index.php?type=boardString&gameId={gameId}", payload, headers)
+            res = conn.getresponse()
+            print(res)
+        else: # Test case
+            current = node(board,m,'O')
+            (minimax(current,float('-inf'),float('inf'),False,'X',depth))
 
+    unified(board,'X','O',current)
 
-def unified(oldBoard,player,oString):
+def unified(oldBoard,player,oString,current):
     '''
         After either going first or second it doesn't really matter as much as long as some information is know
 
@@ -103,34 +169,70 @@ def unified(oldBoard,player,oString):
             oldboard (list[["-"]*n]*n) - n by n size board that has been affected by goingFirst() or goingSecond()
             player (string) - Whether the program is X or O
             oString (string) - Whether the opponent is X or O 
+            current (Node) - current node thats being looked at
     '''
+
+    global m
+    global n
+    headers = {
+        'x-api-key': 'f1d4e5463f445fa81aae',
+        'userid': '3626',
+        'Content-Type': 'application/x-www-form-urlencoded'
+    }
+    conn = http.client.HTTPSConnection("www.notexponential.com")
+
     board = oldBoard
+    depth = depthPenality()
+    firstMax = False
     while len(current.child) != 0:
-        
+        depth += 1
         # Waits for the other players move
         while(True): # Waiting on a reply from the other user
-            getBoard = f'type=boardString&gameId={gameId}' # Payload to get board
-            response = requests.request("GET", URL, headers=HEADERS, data=getBoard) # Gets current board
-            newboard = [] # Possible new
-            for row in response.output.split('\n'):
-                newboard.append(list(row))
+            payload = ''
+            conn.request("GET", f"/aip2pgaming/api/index.php?type=boardString&gameId={gameId}", payload, headers)
+
+            res = conn.getresponse()
+            data = res.read()
+            input_string = data.decode('utf-8')
+            translate = json.loads(input_string)
+
+            # Extract the grid pattern
+            grid_pattern = translate["output"]
+
+            newBoard = [] # Possible new
+            for row in grid_pattern.split("\n"):
+                newBoard.append(list(row))
+            newBoard.pop()
             
-            if (newboard != board): # Checks if the player has made a new move
+            if (newBoard != board): # Checks if the player has made a new move
                 found = False 
                 for child in current.child:
-                    if child.cBoard == newboard:
+                    if child.cBoard == newBoard:
                         found = True
                         break
                 if (found):
                     current = child
                 else:
-                    current = node(newboard,m,oString) #Exists if somehow the program didn't see the move should never appear
-                break # Break out of the while (true) loop 
+                    current = node(newBoard,m,oString) #Exists if somehow the program didn't see the move should never appear
+                break # Break out of the while (true) loop
+            elif depth == n*n:
+                if (firstMax):
+                    firstMax = False
+                    print("All nodes have been calculated")
+                pass
+            else: # Calculates next depth while waiting
+                depth += 1
+                (minimax(current,float('-inf'),float('inf'),False,'X',depth))
     
         # Responding to move from opponent
-        _, current = (minimax(current,float('-inf'),float('inf'),True,player))
-        makeMove = f'type=move&gameId={gameId}&teamId={TEAM}&move={current.move[0]}%2C{current.move[1]}'
-        response = requests.request("POST", URL, headers=HEADERS, data=makeMove)
+        _, current = (minimax(current,float('-inf'),float('inf'),True,player,depth))
+        payload = f'type=move&gameId={gameId}&teamId={TEAM}&move={current.move[0]}%2C{current.move[1]}'
+
+        print("Sending next move")
+        conn.request("POST", "/aip2pgaming/api/index.php", payload, headers)
+        res = conn.getresponse()
+        data = res.read()
+        print(data.decode("utf-8"))
         if(secondLastMove(current.cBoard)): #Checks if its the last move made by this program
             break
     print("GAME OVER")
@@ -163,8 +265,8 @@ def validNumber():
     '''      
     while True:
         try:
-            opponent_id = int(input("Please enter a valid number: "))
-            return opponent_id
+            number = int(input("Please enter a valid number: "))
+            return number
         except ValueError:
             print("Invalid input. Please enter a valid integer.")
             

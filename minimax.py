@@ -2,8 +2,16 @@ import copy
 
 from heursitic import heuristic,node 
 
-min
-def minimax(cNode, alpha, beta, maxBool, player):
+def custom_sort(x):
+    '''
+    Custom sort so that we look at lost states last and win states first
+    '''
+    if x is None:
+        return 0
+    else:
+        return -x
+
+def minimax(cNode, alpha, beta, maxBool, player,depth=-1):
     '''
         Gets the minimax of the current branch
         Input:
@@ -16,6 +24,10 @@ def minimax(cNode, alpha, beta, maxBool, player):
             value (int) - This is the max or min value depending on what was being optimized
             chosen_node (node) - This returns the node that was chosen in the path used too say the next move
     '''
+    if depth != -1: # Introduced node depth because we may want to have that exist especially as we get to the huge boards
+        if cNode.depth >= depth:
+            cNode.value = heuristic(cNode, player)
+            return cNode.value, cNode
     
     if cNode.new: # This part only runs if its the first time the node has been looked at
         cNode.new = False
@@ -26,29 +38,32 @@ def minimax(cNode, alpha, beta, maxBool, player):
     if len(cNode.child) == 0: # This catches any win states or tie states
         return cNode.value, cNode  
 
+
     if maxBool: # Checks for maximizing for value
         max_val = float('-inf')
-        chosen_node = None  
+        chosen_node = None
         for children in cNode.child:
-            val, _ = minimax(children, alpha, beta, False, player)
+            val, _ = minimax(children, alpha, beta, False, player,depth)
             if val > max_val: 
                 max_val = val
                 chosen_node = children  
             alpha = max(alpha, max_val)
             if beta <= alpha:
                 break
+        sorted_children = sorted(cNode.child, key=lambda x: custom_sort(x.value), reverse=True) # Sort in descending order for maximizing minimax on subsequent views 
         return max_val, chosen_node  
     else: # Checks for minimizing of value
         min_val = float('inf')
         chosen_node = None  
         for children in cNode.child:
-            val, _ = minimax(children, alpha, beta, True, player)
+            val, _ = minimax(children, alpha, beta, True, player,depth)
             if val < min_val:
                 min_val = val
                 chosen_node = children  
             beta = min(beta, min_val)
             if beta <= alpha:
                 break
+        sorted_children = sorted(cNode.child, key=lambda x: custom_sort(x.value))# Sort in ascending order for minimax on subsequent views
         return min_val, chosen_node
 
 def secondLastMove(board):

@@ -1,5 +1,3 @@
-import copy
-
 class node():
     '''
         Initalizes node
@@ -38,15 +36,16 @@ class node():
                 possibleMoves (Node) - List of all possible moves that can be made
         '''
         possibleMoves = []
+        depth = self.depth +1
         for i in range (self.n):
             for j in range (self.n):
                 if self.cBoard[i][j] == '_' or self.cBoard[i][j] == '-':
-                    childBoard = copy.deepcopy(self.cBoard)
+                    childBoard = [row[:] for row in self.cBoard] 
                     childBoard[i][j] = self.player
                     if(self.player == 'X'):
-                        child = node(childBoard,3,'O',self.depth +1,(i,j))
+                        child = node(childBoard,3,'O',depth,(i,j))
                     else:
-                        child = node(childBoard,3,'X',self.depth+1,(i,j))
+                        child = node(childBoard,3,'X',depth,(i,j))
                     possibleMoves.append(child)
         self.child = possibleMoves
         
