@@ -213,7 +213,8 @@ def unified(oldBoard,player,oString,current):
                 else:
                     current = node(newBoard,m,oString) #Exists if somehow the program didn't see the move should never appear
                 break # Break out of the while (true) loop
-            # TODO: Not sure if we want this
+        # TODO: Not sure if we want this remove??? 
+        '''
             elif depth+counter == n*n:
                 if (firstMax):
                     firstMax = False
@@ -223,14 +224,11 @@ def unified(oldBoard,player,oString,current):
                 counter += 1
                 (minimax(current,float('-inf'),float('inf'),False,'X',depth+counter))
 
-        # TODO: Not sure if we want this
         counter = 0
         firstMax = True
+        '''
         # Responding to move from opponent
-        if ((n*n)-depth > 10 ): # Anything that would take to calculate thats larger than 9 differnt choices has the depth penalty (if it would apply)
-            _, current = (minimax(current,float('-inf'),float('inf'),True,player,depth))
-        else: # No Depth punishments on anything that has 9 choices or less
-            _, current = (minimax(current,float('-inf'),float('inf'),True,player,-1))
+        _, current = (minimax(current,float('-inf'),float('inf'),True,player,depth))
         payload = f'type=move&gameId={gameId}&teamId={TEAM}&move={current.move[0]}%2C{current.move[1]}'
 
         print("Sending next move")
