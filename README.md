@@ -1,4 +1,4 @@
-# Tic-Tac-Toe: Adverserial search with Minimax
+# Tic-Tac-Toe: Adversarial search with Minimax
 
 
 ## Introduction
