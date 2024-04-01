@@ -25,6 +25,8 @@ class node():
         self.child = []
         self.new = True
         self.move = move
+        self.minormaxtemp = None
+        self.bestChoice = None
     
     def populate(self):
         '''

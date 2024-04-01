@@ -50,7 +50,8 @@ def minimax(cNode, alpha, beta, maxBool, player,depth=-1):
             alpha = max(alpha, max_val)
             if beta <= alpha:
                 break
-        sorted_children = sorted(cNode.child, key=lambda x: custom_sort(x.value), reverse=True) # Sort in descending order for maximizing minimax on subsequent views 
+        cNode.minormaxtemp = max_val
+        cNode.child = sorted(cNode.child, key=lambda x: custom_sort(x.minormaxtemp), reverse=True)  # Sort in descending order for minimax on subsequent views
         return max_val, chosen_node  
     else: # Checks for minimizing of value
         min_val = float('inf')
@@ -63,7 +64,8 @@ def minimax(cNode, alpha, beta, maxBool, player,depth=-1):
             beta = min(beta, min_val)
             if beta <= alpha:
                 break
-        sorted_children = sorted(cNode.child, key=lambda x: custom_sort(x.value))# Sort in ascending order for minimax on subsequent views
+        cNode.minormaxtemp = min_val
+        cNode.child = sorted(cNode.child, key=lambda x: custom_sort(x.minormaxtemp))# Sort in ascending order for minimax on subsequent views
         return min_val, chosen_node
 
 def secondLastMove(board):

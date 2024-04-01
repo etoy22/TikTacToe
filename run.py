@@ -139,26 +139,24 @@ def goingSecond(board):
     '''
     global headers
     global m
+    conn = http.client.HTTPSConnection("www.notexponential.com")
     depth = depthPenality()
     count = 0
     for row in board:
         count += row.count('-')
-    
-    if len(board)*len(board) == count: 
+    if len(board)*len(board) == count: # This occurs when you are waiting for the next move from the opposition
         current = node(board,m,'O')
         minimax(current,float('-inf'),float('inf'),False,'X')
     else:
-        if gameId != 4783:
-            current = node(board,m,'X')
-            _, current = (minimax(current,float('-inf'),float('inf'),True,'X',depth))
-            payload = f'type=move&gameId={gameId}&teamId={TEAM}&move={current.move[0]}%2C{current.move[1]}'
-            conn.request("GET", f"/aip2pgaming/api/index.php?type=boardString&gameId={gameId}", payload, headers)
-            res = conn.getresponse()
-            print(res)
-        else: # Test case
-            current = node(board,m,'O')
-            (minimax(current,float('-inf'),float('inf'),False,'X',depth))
-
+        current = node(board,m,'X')
+        val, current = (minimax(current,float('-inf'),float('inf'),True,'X',depth))
+        payload = f'type=move&gameId={gameId}&teamId={TEAM}&move={current.move[0]}%2C{current.move[1]}'
+        board = current.cBoard
+        print("Sending next move")
+        conn.request("POST", f"/aip2pgaming/api/index.php?type=boardString&gameId={gameId}", payload, headers)
+        res = conn.getresponse()
+        print(res)
+        
     unified(board,'X','O',current)
 
 def unified(oldBoard,player,oString,current):
@@ -171,7 +169,6 @@ def unified(oldBoard,player,oString,current):
             oString (string) - Whether the opponent is X or O 
             current (Node) - current node thats being looked at
     '''
-
     global m
     global n
     headers = {
@@ -179,17 +176,18 @@ def unified(oldBoard,player,oString,current):
         'userid': '3626',
         'Content-Type': 'application/x-www-form-urlencoded'
     }
-    conn = http.client.HTTPSConnection("www.notexponential.com")
 
     board = oldBoard
     depth = depthPenality()
     firstMax = False
+    counter = 0
     while len(current.child) != 0:
         depth += 1
         # Waits for the other players move
         while(True): # Waiting on a reply from the other user
             payload = ''
             conn.request("GET", f"/aip2pgaming/api/index.php?type=boardString&gameId={gameId}", payload, headers)
+            conn = http.client.HTTPSConnection("www.notexponential.com")
 
             res = conn.getresponse()
             data = res.read()
@@ -220,15 +218,19 @@ def unified(oldBoard,player,oString,current):
                     firstMax = False
                     print("All nodes have been calculated")
                 pass
-            else: # Calculates next depth while waiting
-                depth += 1
-                (minimax(current,float('-inf'),float('inf'),False,'X',depth))
-    
+            else: # Calculates next depth while waiting 
+                counter += 1
+                (minimax(current,float('-inf'),float('inf'),False,'X',depth+counter))
+
         # Responding to move from opponent
-        _, current = (minimax(current,float('-inf'),float('inf'),True,player,depth))
+        if ((n*n)-depth > 10 ): # Anything that would take to calculate thats larger than 9 differnt choices has the depth penalty (if it would apply)
+            _, current = (minimax(current,float('-inf'),float('inf'),True,player,depth))
+        else: # No Depth punishments on anything that has 9 choices or less
+            _, current = (minimax(current,float('-inf'),float('inf'),True,player,-1))
         payload = f'type=move&gameId={gameId}&teamId={TEAM}&move={current.move[0]}%2C{current.move[1]}'
 
         print("Sending next move")
+        conn = http.client.HTTPSConnection("www.notexponential.com")
         conn.request("POST", "/aip2pgaming/api/index.php", payload, headers)
         res = conn.getresponse()
         data = res.read()
