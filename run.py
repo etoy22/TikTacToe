@@ -5,9 +5,10 @@ import json
 
 '''
     CONSTS
-    url - the url to connect to
-    headers - the header that is needed to connect to the games contains the api
+
+    conn - used for connection
     TEAM - Our team id
+    headers - the header that is needed to connect to the games contains the api
 '''
 conn = http.client.HTTPSConnection("www.notexponential.com")
 TEAM = 1424
@@ -24,12 +25,11 @@ headers = {
     n (int) - Voard Size of the game
     m (int) - how many you need to get in a row on the board
     gameId (int) - recieved from the api and gives us the id of the game
-    first (bool) - says if we are going first or second
 '''
 opponent = -1
-n = 12
+n = 4
 gameId = -1
-
+m = 4
 
 
 
@@ -44,16 +44,15 @@ def startGame():
     global headers
     global gameId
     first = False
+    print ("Are you creating the game")
     create = YesNo()
     if (create):
     # Clarifying questions about the game
         print("Whats the opponent id?")
         opponent = validNumber()
         
-        print("Are you going first or second?")
-        first = YesNo()
         
-        print("Defaults are Board Size of 12 and 6 would you like the defaults")
+        print("Defaults are Board Size of 4 and 4 would you like the defaults")
         default = YesNo()
         if (not(default)):
             print("Whats the board size")
@@ -62,10 +61,8 @@ def startGame():
             m = validNumber()
 
     # Creation of the game
-        if (first):
-            payload = f'type=game&teamId1={TEAM}&teamId2={opponent}&gameType=TTT&boardSize={n}&target={m}'
-        else:
-            payload = f'type=game&teamId1={opponent}&teamId2={TEAM}&gameType=TTT&boardSize={n}&target={m}'
+        payload = f'type=game&teamId1={TEAM}&teamId2={opponent}&gameType=TTT&boardSize={n}&target={m}'
+        
         conn.request("POST", "/aip2pgaming/api/index.php", payload, headers)
         res = conn.getresponse()
         data = res.read()
@@ -83,7 +80,7 @@ def startGame():
         data = res.read()
         input_string = data.decode('utf-8')
         translate = json.loads(input_string)
-
+        print("Here because you may need this to get the gameId",translate)
         # Extract the grid pattern
         grid_pattern = translate["output"]
 
@@ -148,7 +145,7 @@ def goingSecond(board):
         minimax(current,float('-inf'),float('inf'),False,'X')
     else:
         current = node(board,m,'X')
-        val, current = (minimax(current,float('-inf'),float('inf'),True,'X',depth))
+        _, current = (minimax(current,float('-inf'),float('inf'),True,'X',depth))
         payload = f'type=move&gameId={gameId}&teamId={TEAM}&move={current.move[0]}%2C{current.move[1]}'
         board = current.cBoard
         print("Sending next move")
@@ -178,8 +175,6 @@ def unified(oldBoard,player,oString,current):
 
     board = oldBoard
     depth = depthPenality()
-    firstMax = False
-    counter = 0
     while len(current.child) != 0:
         depth += 1
         # Waits for the other players move
@@ -212,20 +207,7 @@ def unified(oldBoard,player,oString,current):
                 else:
                     current = node(newBoard,m,oString) #Exists if somehow the program didn't see the move should never appear
                 break # Break out of the while (true) loop
-        # TODO: Not sure if we want this remove??? 
-        '''
-            elif depth+counter == n*n:
-                if (firstMax):
-                    firstMax = False
-                    print("All nodes have been calculated")
-                pass
-            else: # Calculates next depth while waiting 
-                counter += 1
-                (minimax(current,float('-inf'),float('inf'),False,'X',depth+counter))
-
-        counter = 0
-        firstMax = True
-        '''
+        
         # Responding to move from opponent
         _, current = (minimax(current,float('-inf'),float('inf'),True,player,depth))
         payload = f'type=move&gameId={gameId}&teamId={TEAM}&move={current.move[0]}%2C{current.move[1]}'
