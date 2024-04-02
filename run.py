@@ -29,7 +29,6 @@ headers = {
 opponent = -1
 n = 12
 gameId = -1
-create = False
 
 
 
@@ -43,8 +42,9 @@ def startGame():
     global m
     global gameId
     global headers
+    global gameId
     first = False
-    
+    create = YesNo()
     if (create):
     # Clarifying questions about the game
         print("Whats the opponent id?")
@@ -106,11 +106,10 @@ def depthPenality():
     '''
     global n
     global m
-    depth = m * 3
+    depth = m * 2
     if (n > 4):
         return depth
     return -1
-
 
 def goingFirst(board):
     '''
@@ -121,14 +120,15 @@ def goingFirst(board):
     '''
     global headers
     global m
+    gameId = 4786
     depth = depthPenality()
-    current = node(board,m,'X')
-    _, current = (minimax(current,float('-inf'),float('inf'),True,'X',depth))
+    current = node(board,m,'O')
+    _, current = (minimax(current,float('-inf'),float('inf'),True,'O',depth))
     payload = f'type=move&gameId={gameId}&teamId={TEAM}&move={current.move[0]}%2C{current.move[1]}'
     conn.request("POST", "/aip2pgaming/api/index.php", payload, headers)
     res = conn.getresponse()
     unified(board,'O','X',current)
-    
+
 def goingSecond(board):
     '''
         Going second attempts to calculate what the opponent might do and starts calculating in advance
@@ -201,7 +201,7 @@ def unified(oldBoard,player,oString,current):
                 newBoard.append(list(row))
             newBoard.pop()
             
-            if (newBoard != board): # Checks if the player has made a new move
+            if (listSame(newBoard,board)): # Checks if the player has made a new move
                 found = False 
                 for child in current.child:
                     if child.cBoard == newBoard:
@@ -240,7 +240,29 @@ def unified(oldBoard,player,oString,current):
             break
     print("GAME OVER")
 
+def listSame(first, second):
+    '''
+        Says if the lists are the same
 
+        Input:
+        first (list) - the first list
+        second (list) - second list
+
+        Return:
+            bool - True if they are the same False if not
+    '''
+    if len(first) != len(second):
+        return False
+    
+    for i in range(len(first)):
+        if len(first[i]) != len(second[i]):
+            return False
+        
+        for j in range(len(first[i])):
+            if first[i][j] != second[i][j]:
+                return False
+    
+    return True
 
 def YesNo():
     '''
