@@ -106,7 +106,7 @@ def depthPenality():
     '''
     global n
     global m
-    depth = m * 2
+    depth = m * 3
     if (n > 4):
         return depth
     return -1
@@ -185,8 +185,8 @@ def unified(oldBoard,player,oString,current):
         # Waits for the other players move
         while(True): # Waiting on a reply from the other user
             payload = ''
-            conn.request("GET", f"/aip2pgaming/api/index.php?type=boardString&gameId={gameId}", payload, headers)
             conn = http.client.HTTPSConnection("www.notexponential.com")
+            conn.request("GET", f"/aip2pgaming/api/index.php?type=boardString&gameId={gameId}", payload, headers)
 
             res = conn.getresponse()
             data = res.read()

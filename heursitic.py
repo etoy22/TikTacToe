@@ -45,9 +45,9 @@ class node():
                     childBoard = [row[:] for row in self.cBoard] 
                     childBoard[i][j] = self.player
                     if(self.player == 'X'):
-                        child = node(childBoard,3,'O',depth,(i,j))
+                        child = node(childBoard,self.m,'O',depth,(i,j))
                     else:
-                        child = node(childBoard,3,'X',depth,(i,j))
+                        child = node(childBoard,self.m,'X',depth,(i,j))
                     possibleMoves.append(child)
         self.child = possibleMoves
         
