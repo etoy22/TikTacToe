@@ -201,7 +201,7 @@ def unified(oldBoard,player,oString,current):
                 newBoard.append(list(row))
             newBoard.pop()
             
-            if (listSame(newBoard,board)): # Checks if the player has made a new move
+            if (not(listSame(newBoard,board))): # Checks if the player has made a new move
                 found = False 
                 for child in current.child:
                     if child.cBoard == newBoard:
