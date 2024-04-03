@@ -42,7 +42,6 @@ def startGame():
     global m
     global gameId
     global headers
-    global gameId
     first = False
     print ("Are you creating the game")
     create = YesNo()
@@ -66,6 +65,10 @@ def startGame():
         conn.request("POST", "/aip2pgaming/api/index.php", payload, headers)
         res = conn.getresponse()
         data = res.read()
+        input_string = data.decode('utf-8')
+        translate = json.loads(input_string)
+        gameId = translate["gameId"]
+
         board = []
         for i in range(n):
             board.append(["-"] * n)
@@ -117,7 +120,6 @@ def goingFirst(board):
     '''
     global headers
     global m
-    gameId = 4786
     depth = depthPenality()
     current = node(board,m,'O')
     _, current = (minimax(current,float('-inf'),float('inf'),True,'O',depth))
@@ -167,6 +169,7 @@ def unified(oldBoard,player,oString,current):
     '''
     global m
     global n
+    global gameId
     headers = {
         'x-api-key': 'f1d4e5463f445fa81aae',
         'userid': '3626',
