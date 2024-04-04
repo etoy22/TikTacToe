@@ -42,7 +42,7 @@ def startGame():
     global m
     global gameId
     global headers
-    first = False
+    first = True
     print ("Are you creating the game")
     create = YesNo()
     if (create):
@@ -68,11 +68,13 @@ def startGame():
         input_string = data.decode('utf-8')
         translate = json.loads(input_string)
         gameId = translate["gameId"]
+        print(gameId)
 
         board = []
         for i in range(n):
             board.append(["-"] * n)
     else:
+        first = False
         print("Input the Game ID")
         gameId = validNumber()
 
@@ -192,6 +194,7 @@ def unified(oldBoard,player,oString,current):
             translate = json.loads(input_string)
 
             # Extract the grid pattern
+            print(translate)
             grid_pattern = translate["output"]
 
             newBoard = [] # Possible new
@@ -202,17 +205,41 @@ def unified(oldBoard,player,oString,current):
             if (not(listSame(newBoard,board))): # Checks if the player has made a new move
                 found = False 
                 for child in current.child:
-                    if child.cBoard == newBoard:
+                    if (listSame(child.cBoard, newBoard)):
                         found = True
                         break
+                # TESTING
+                # print("\n")
+                # print(current.move)
+                # print(TEAM)
+                # print(gameId)
+                # print("\n")
+                ##
                 if (found):
+                    print(found)
                     current = child
                 else:
-                    current = node(newBoard,m,oString) #Exists if somehow the program didn't see the move should never appear
+                    current = node(newBoard,m,child.player,child.depth)
+                    #current = node(newBoard,m,oString) #Exists if somehow the program didn't see the move should never appear
+                # TESTING
+                # print("\n")
+                # print(current.move)
+                # print(TEAM)
+                # print(gameId)
+                # print("\n")
+                ##
                 break # Break out of the while (true) loop
         
         # Responding to move from opponent
         _, current = (minimax(current,float('-inf'),float('inf'),True,player,depth))
+        
+        # TESTING
+        # print("\n")
+        # print(current.move)
+        # print(TEAM)
+        # print(gameId)
+        # print("\n")
+        ##
         payload = f'type=move&gameId={gameId}&teamId={TEAM}&move={current.move[0]}%2C{current.move[1]}'
 
         print("Sending next move")
