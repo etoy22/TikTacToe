@@ -68,7 +68,7 @@ def startGame():
         input_string = data.decode('utf-8')
         translate = json.loads(input_string)
         gameId = translate["gameId"]
-        print(gameId)
+        print("Game Id is",gameId)
 
         board = []
         for i in range(n):
@@ -125,10 +125,12 @@ def goingFirst(board):
     depth = depthPenality()
     current = node(board,m,'O')
     _, current = (minimax(current,float('-inf'),float('inf'),True,'O',depth))
+    newBoard = current.cBoard
     payload = f'type=move&gameId={gameId}&teamId={TEAM}&move={current.move[0]}%2C{current.move[1]}'
+    print("Sending next move")
     conn.request("POST", "/aip2pgaming/api/index.php", payload, headers)
     res = conn.getresponse()
-    unified(board,'O','X',current)
+    unified(newBoard,'O','X',current)
 
 def goingSecond(board):
     '''
@@ -155,7 +157,7 @@ def goingSecond(board):
         print("Sending next move")
         conn.request("POST", f"/aip2pgaming/api/index.php?type=boardString&gameId={gameId}", payload, headers)
         res = conn.getresponse()
-        print(res)
+        # print(res)
         
     unified(board,'X','O',current)
 
@@ -194,7 +196,7 @@ def unified(oldBoard,player,oString,current):
             translate = json.loads(input_string)
 
             # Extract the grid pattern
-            print(translate)
+            # print(translate)
             grid_pattern = translate["output"]
 
             newBoard = [] # Possible new
