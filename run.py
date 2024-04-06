@@ -31,9 +31,6 @@ n = 4
 gameId = -1
 m = 4
 
-
-
-
 def startGame():
     '''
         Function to start the TicTacToe game
@@ -49,7 +46,6 @@ def startGame():
     # Clarifying questions about the game
         print("Whats the opponent id?")
         opponent = validNumber()
-        
         
         print("Defaults are Board Size of 4 and 4 would you like the defaults")
         default = YesNo()
@@ -94,9 +90,8 @@ def startGame():
         for row in grid_pattern.split("\n"):
             board.append(list(row))
         board.pop()
-    
-    
-    
+        n = len(board)
+
     if (first):
         goingFirst(board)
     else:
@@ -108,7 +103,7 @@ def depthPenality():
     '''
     global n
     global m
-    depth = m * 2
+    depth = m + 1
     if (n > 4):
         return depth
     return -1
@@ -148,8 +143,9 @@ def goingSecond(board):
         count += row.count('-')
     if len(board)*len(board) == count: # This occurs when you are waiting for the next move from the opposition
         current = node(board,m,'O')
-        minimax(current,float('-inf'),float('inf'),False,'X')
+        #minimax(current,float('-inf'),float('inf'),False,'X')
     else:
+        print(depth)
         current = node(board,m,'X')
         _, current = (minimax(current,float('-inf'),float('inf'),True,'X',depth))
         payload = f'type=move&gameId={gameId}&teamId={TEAM}&move={current.move[0]}%2C{current.move[1]}'
@@ -157,7 +153,6 @@ def goingSecond(board):
         print("Sending next move")
         conn.request("POST", f"/aip2pgaming/api/index.php?type=boardString&gameId={gameId}", payload, headers)
         res = conn.getresponse()
-        # print(res)
         
     unified(board,'X','O',current)
 
@@ -196,7 +191,7 @@ def unified(oldBoard,player,oString,current):
             translate = json.loads(input_string)
 
             # Extract the grid pattern
-            # print(translate)
+            print(translate)
             grid_pattern = translate["output"]
 
             newBoard = [] # Possible new
@@ -210,38 +205,16 @@ def unified(oldBoard,player,oString,current):
                     if (listSame(child.cBoard, newBoard)):
                         found = True
                         break
-                # TESTING
-                # print("\n")
-                # print(current.move)
-                # print(TEAM)
-                # print(gameId)
-                # print("\n")
-                ##
                 if (found):
                     print(found)
                     current = child
                 else:
-                    current = node(newBoard,m,child.player,child.depth)
-                    #current = node(newBoard,m,oString) #Exists if somehow the program didn't see the move should never appear
-                # TESTING
-                # print("\n")
-                # print(current.move)
-                # print(TEAM)
-                # print(gameId)
-                # print("\n")
-                ##
+                    current = node(newBoard,m,child.player,child.depth) #Exists if somehow the program didn't see the move should never appear
                 break # Break out of the while (true) loop
         
         # Responding to move from opponent
         _, current = (minimax(current,float('-inf'),float('inf'),True,player,depth))
         
-        # TESTING
-        # print("\n")
-        # print(current.move)
-        # print(TEAM)
-        # print(gameId)
-        # print("\n")
-        ##
         payload = f'type=move&gameId={gameId}&teamId={TEAM}&move={current.move[0]}%2C{current.move[1]}'
 
         print("Sending next move")
@@ -250,8 +223,8 @@ def unified(oldBoard,player,oString,current):
         res = conn.getresponse()
         data = res.read()
         print(data.decode("utf-8"))
-        if(secondLastMove(current.cBoard)): #Checks if its the last move made by this program
-            break
+        # if(secondLastMove(current.cBoard)): #Checks if its the last move made by this program
+        #     break
     print("GAME OVER")
 
 def listSame(first, second):
