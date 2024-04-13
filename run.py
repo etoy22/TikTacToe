@@ -103,7 +103,7 @@ def depthPenality():
     '''
     global n
     global m
-    depth = m + 1
+    depth = m*2
     if (n > 4):
         return depth
     return -1
@@ -208,13 +208,15 @@ def unified(oldBoard,player,oString,current):
                 if (found):
                     print(found)
                     current = child
+                    board = current.cBoard
                 else:
                     current = node(newBoard,m,child.player,child.depth) #Exists if somehow the program didn't see the move should never appear
+                    board = current.cBoard
                 break # Break out of the while (true) loop
         
         # Responding to move from opponent
         _, current = (minimax(current,float('-inf'),float('inf'),True,player,depth))
-        
+        board = current.cBoard
         payload = f'type=move&gameId={gameId}&teamId={TEAM}&move={current.move[0]}%2C{current.move[1]}'
 
         print("Sending next move")
